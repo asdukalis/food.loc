@@ -214,7 +214,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const forms = document.querySelectorAll("form");
 
   const message = {
-    loading: "Загрузка",
+    loading: "img/form/spinner.svg",
     success: "Спасибо, Скоро мы с вами свяжемся",
     failure: "Что-то пошло не так...!",
   };
@@ -227,59 +227,57 @@ window.addEventListener("DOMContentLoaded", () => {
     form.addEventListener("submit", (e) => {
       e.preventDefault();
 
-      const statusMessage = document.createElement("div");
-      statusMessage.classList.add("status");
-      statusMessage.textContent = message.loading;
-      form.append(statusMessage);
-
-      const request = new XMLHttpRequest();
-      request.open("POST", "server.php");
-
-      // request.setRequestHeader('Content-type', 'multipart/form-data'); //не используется, т.к.создается автоматически если используем new FormData
-      request.setRequestHeader("Content-type", "application/json"); //для отправки данных на сервер в формате JSON
+      const statusMessage = document.createElement("img");
+      // statusMessage.classList.add("status");
+      statusMessage.src = message.loading;
+      statusMessage.style.cssText = `
+      display: block;
+      margin: 0 auto;
+      `;
+      // form.append(statusMessage);
+      form.insertAdjacentElement("afterend", statusMessage);
 
       const formData = new FormData(form);
 
       const object = {};
-
       formData.forEach((value, key) => {
         object[key] = value;
       });
 
-      const json = JSON.stringify(object);
-
-      // request.send(formData);
-      request.send(json);
-
-      request.addEventListener("load", () => {
-        if (request.status === 200) {
-          console.log(request.response);
+      fetch("server.php", {
+        method: "POST",
+        headers: { "Content-type": "application/json" },
+        body: JSON.stringify(object),
+      })
+        .then((data) => data.text())
+        .then((data) => {
+          console.log(data);
           statusMessage.textContent = message.success;
-          form.reset();
-          setTimeout(() => {
-            statusMessage.remove();
-          }, 2000);
-        } else {
+          statusMessage.remove();
+        })
+        .catch(() => {
           statusMessage.textContent = message.failure;
-        }
-      });
+        })
+        .finally(() => {
+          form.reset();
+        });
+
+      function showThanksModal() {
+        const prevModalDialog = document.querySelector(".modal__dialog");
+
+        prevModalDialog.classList.add("hide");
+        openModal();
+        const thanksModal = document.createElement("div");
+        thanksModal.classList.add("modal__dialog");
+        thanksModal.innerHTML = `
+        <div class="modal__content">
+          <div class="modal__close" data-close>&times;</div>
+          <div class="modal__title">
+            Мы свяжемся с вами как можно быстрее!
+          </div>
+        </div>
+        `;
+      }
     });
-  }
-
-  function showThanksModal() {
-    const prevModalDialog = document.querySelector(".modal__dialog");
-
-    prevModalDialog.classList.add("hide");
-    openModal();
-    const thanksModal = document.createElement("div");
-    thanksModal.classList.add("modal__dialog");
-    thanksModal.innerHTML = `
-    <div class="modal__content">
-      <div class="modal__close" data-close>&times;</div>
-      <div class="modal__title">
-        Мы свяжемся с вами как можно быстрее!
-      </div>
-    </div>
-    `;
   }
 });
